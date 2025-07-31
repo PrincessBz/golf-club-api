@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class MemberService {
@@ -19,53 +20,84 @@ public class MemberService {
         this.memberRepository = memberRepository;
     }
 
-    public List<Member> findAll() {
-        return memberRepository.findAll();
+    public List<MemberDTO> findAll() {
+        return memberRepository.findAll().stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+
     }
 
-    public Member findById(Long id) {
-        return memberRepository.findById(id)
+    public MemberDTO findById(Long id) {
+        Member member = memberRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Member not found with id: " + id));
+        return toDTO(member);
     }
 
-    public Member save(MemberDTO memberDTO) {
+    public MemberDTO createMember(MemberDTO memberDTO) {
+        Member member = fromDTO(memberDTO);
+        Member savedMember = memberRepository.save(member);
+        return toDTO(savedMember);
+    }
+
+
+    @Transactional
+    public MemberDTO updateMember(Long id, MemberDTO memberDTO) {
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Member not found with id: " + id));
+
+        // Update member fields
+        member.setName(memberDTO.getName());
+        member.setPhoneNumber(memberDTO.getPhoneNumber());
+        member.setEmail(memberDTO.getEmail());
+        member.setAddress(memberDTO.getAddress());
+        member.setMembershipDuration(memberDTO.getMembershipDuration());
+        member.setMembershipStartDate(memberDTO.getMembershipStartDate());
+
+        Member updatedMember = memberRepository.save(member);
+        return toDTO(updatedMember);
+    }
+
+    public void deleteById(Long id) {
+        if (!memberRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Member not found with id: " + id);
+        }
+        memberRepository.deleteById(id);
+    }
+
+    public List<MemberDTO> searchByName(String name) {
+        return memberRepository.findByNameContainingIgnoreCase(name).stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<MemberDTO> searchByPhoneNumber(String phoneNumber) {
+        return memberRepository.findByPhoneNumber(phoneNumber).stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    private MemberDTO toDTO(Member member) {
+        return  new MemberDTO(
+                member.getId(),
+                member.getName(),
+                member.getAddress(),
+                member.getEmail(),
+                member.getPhoneNumber(),
+                member.getMembershipStartDate(),
+                member.getMembershipDuration()
+        );
+    }
+
+    private Member fromDTO(MemberDTO memberDTO) {
         Member member = new Member();
+        // We don't set the ID from the DTO on creation
         member.setName(memberDTO.getName());
         member.setAddress(memberDTO.getAddress());
         member.setEmail(memberDTO.getEmail());
         member.setPhoneNumber(memberDTO.getPhoneNumber());
         member.setMembershipStartDate(memberDTO.getMembershipStartDate());
         member.setMembershipDuration(memberDTO.getMembershipDuration());
+        return member;
 
-        return memberRepository.save(member);
     }
-
-    @Transactional
-    public Member update(Long id, MemberDTO memberDetails) {
-        Member member = findById(id); // Reuse findById to handle not found case
-
-        member.setName(memberDetails.getName());
-        member.setAddress(memberDetails.getAddress());
-        member.setEmail(memberDetails.getEmail());
-        member.setPhoneNumber(memberDetails.getPhoneNumber());
-        member.setMembershipStartDate(memberDetails.getMembershipStartDate());
-        member.setMembershipDuration(memberDetails.getMembershipDuration());
-
-        return memberRepository.save(member);
-    }
-
-    public void deleteById(Long id) {
-        Member member = findById(id); // Check if member exists before deleting
-        memberRepository.delete(member);
-    }
-
-    public List<Member> searchByName(String name) {
-        return memberRepository.findByNameContainingIgnoreCase(name);
-    }
-
-    public List<Member> searchByPhoneNumber(String phoneNumber) {
-        return memberRepository.findByPhoneNumber(phoneNumber);
-    }
-
-
 }

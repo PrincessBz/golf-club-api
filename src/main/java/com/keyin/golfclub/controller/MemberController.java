@@ -1,9 +1,8 @@
 package com.keyin.golfclub.controller;
 
 import com.keyin.golfclub.dto.MemberDTO;
-import com.keyin.golfclub.exception.ResourceNotFoundException;
-import com.keyin.golfclub.model.Member;
 import com.keyin.golfclub.service.MemberService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,17 +19,18 @@ public class MemberController {
     }
 
     @PostMapping
-    public Member addMember(@RequestBody MemberDTO memberDTO) {
-        return memberService.save(memberDTO);
+    public ResponseEntity<MemberDTO> addMember(@RequestBody MemberDTO memberDTO) {
+        MemberDTO createdMember = memberService.createMember(memberDTO);
+        return new ResponseEntity<>(createdMember, HttpStatus.CREATED);
     }
 
     @GetMapping
-    public List<Member> getAllMembers() {
+    public List<MemberDTO> getAllMembers() {
         return memberService.findAll();
     }
 
     @GetMapping("/search")
-    public List<Member> searchMembers (
+    public List<MemberDTO> searchMembers (
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String phoneNumber){
 
@@ -44,14 +44,14 @@ public class MemberController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Member> getMemberById(@PathVariable Long id) {
-        Member member = memberService.findById(id);
+    public ResponseEntity<MemberDTO> getMemberById(@PathVariable Long id) {
+        MemberDTO member = memberService.findById(id);
         return ResponseEntity.ok(member);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Member> updateMember(@PathVariable Long id, @RequestBody MemberDTO memberDTO) {
-        Member updatedMember = memberService.update(id, memberDTO);
+    public ResponseEntity<MemberDTO> updateMember(@PathVariable Long id, @RequestBody MemberDTO memberDTO) {
+        MemberDTO updatedMember = memberService.updateMember(id, memberDTO);
         return ResponseEntity.ok(updatedMember);
     }
 
