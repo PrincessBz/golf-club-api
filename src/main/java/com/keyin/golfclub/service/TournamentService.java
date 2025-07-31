@@ -95,7 +95,7 @@ public List<TournamentDTO> searchTournaments(LocalDate startDate, String locatio
 
 private Tournament fromDTO(TournamentDTO dto) {
     Tournament tournament = new Tournament();
-    tournament.setId(dto.getId());
+
     tournament.setStartDate(dto.getStartDate());
     tournament.setEndDate(dto.getEndDate());
     tournament.setLocation(dto.getLocation());
